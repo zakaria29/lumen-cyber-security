@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Crypt;
 
 use App\Exam;
 use App\ExamCategory;
+use App\DoExam;
+use App\ExamDetail;
+use App\Question;
 
 
 class ExamController extends Controller
@@ -19,6 +22,12 @@ class ExamController extends Controller
         } else {
             return response($exam->take($limit)->skip($offset)->get());
         }
+    }
+
+    public function getForTeam()
+    {
+        $exam = Exam::select(['exam_id','exam_name','status'])->get();
+        return response($exam);
     }
 
     public $find;
@@ -42,11 +51,13 @@ class ExamController extends Controller
                 Exam::create([
                     "exam_id" => "EID".time(),
                     "exam_name" => $request->exam_name,
+                    "status" => $request->status,
                     "token" => $this->generateToken(5)
                 ]);
             } else if ($action == "update") {
                 Exam::where("exam_id", $request->exam_id)->update([
                     "exam_name" => $request->exam_name,
+                    "status" => $request->status,
                 ]);
             }
             
@@ -86,10 +97,10 @@ class ExamController extends Controller
             $examCategory = json_decode($request->exam_category);
             foreach ($examCategory as $ec) {
                 ExamCategory::create([
-                    "exam_id" => $exam_id, "category_id" => $ec->category_id
+                    "exam_id" => $exam_id, "category_id" => $ec
                 ]);
             }
-            return response(["status" => true, "message" => "Data has been deleted"]);
+            return response(["status" => true, "message" => "Data has been saved"]);
         } catch (\Exception $e) {
             return response(["status" => false, "message" => $e->getMessage()]);
         }
@@ -103,5 +114,75 @@ class ExamController extends Controller
             $randomString .= $characters[rand(0, $charactersLength - 1)];
         }
         return $randomString;
+    }
+
+    public function sendToken(Request $request)
+    {
+        try {
+            $token = $request->token;
+            $count = Exam::where("token",$token)->count();
+            if ($count > 0) {
+                $countTeam = DoExam::where("team_id", $request->team_id)->where("exam_id", $request->exam_id)
+                ->count();
+                if ($countTeam == 0) {
+                    $do_exam_id = "DOEX".time().rand(1,1000);
+                    DoExam::create([
+                        "do_exam_id" => $do_exam_id,
+                        "start_time" => date("Y-m-d H:i:s"),
+                        "team_id" => $request->team_id,
+                        "exam_id" => $request->exam_id
+                    ]);
+                }else{
+                    $do_exam_id = DoExam::where("team_id", $request->team_id)
+                    ->where("exam_id", $request->exam_id)->first()->do_exam_id;
+                }
+                return response([
+                    "status" => true, "message" => "Token Valid", "do_exam_id" => $do_exam_id
+                ]);
+            } else {
+                return response(["status" => false, "message" => "Token Invalid"]);
+            }
+            
+        } catch (\Exception $e) {
+            return response(["status" => false, "message" => $e->getMessage()]);
+        }
+    }
+
+    public function getQuestion(Request $request)
+    {
+        $data = ExamCategory::with(["category","category.questions" => function($query){
+            $query->select("question_id","question","point","category_id")
+            ->where("status",1)->orderBy("point","asc");
+        },"category.questions.files"])
+        ->where("exam_id", $request->exam_id)->get();
+        return response($data);
+    }
+
+    public function getResult(Request $request)
+    {
+        $data = ExamDetail::where("do_exam_id", $request->do_exam_id)->get();
+        return response($data);
+    }
+
+    public function setAnswer(Request $request)
+    {
+        try {
+            $do_exam_id = $request->do_exam_id;
+            $member_id = $request->member_id;
+            $question_id = $request->question_id;
+            $answer = $request->answer;
+            $question = Question::where("question_id", $question_id)->first();
+            $category_id = $question->category_id;
+            $score = ($answer == $question->answer_key) ? $question->point : 0;
+            ExamDetail::where("do_exam_id", $do_exam_id)->where("question_id", $question_id)->delete();
+            ExamDetail::create([
+                "do_exam_id" => $do_exam_id, "member_id" => $member_id,
+                "question_id" => $question_id, "category_id" => $category_id,
+                "answer" => $answer, "score" => $score
+            ]);
+            return response(["status" => true, "message" => "Your Answer Submited"]);
+        } catch (\Exception $e) {
+            return response(["status" => false, "message" => $e->getMessage()]);
+        }
     }
 }

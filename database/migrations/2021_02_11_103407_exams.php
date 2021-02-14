@@ -17,6 +17,7 @@ class Exams extends Migration
             $table->string("exam_id", 30)->primary();
             $table->string("exam_name");
             $table->string("token");
+            $table->boolean("status");
             $table->timestamps();
         });
     }

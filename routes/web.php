@@ -51,6 +51,7 @@ $router->group(["prefix" => "api/v1","middleware" => "admin"], function() use ($
     $router->post("/category[/{limit}/{offset}]", "CategoryController@find");
     $router->post("/category-save", "CategoryController@save");
     $router->delete("/category/drop/{category_id}", "CategoryController@drop");
+    $router->get("/active-category", "CategoryController@getActiveCategory");
 
     # question
     $router->get("/question[/{limit}/{offset}]", "QuestionController@get");
@@ -67,8 +68,17 @@ $router->group(["prefix" => "api/v1","middleware" => "admin"], function() use ($
     $router->post("/exam[/{limit}/{offset}]", "ExamController@find");
     $router->post("/exam-save", "ExamController@save");
     $router->delete("/exam/drop/{exam_id}", "ExamController@drop");
-    $router->get("/refresh-token/{exam_id}", "ExamController@refereshToken");
+    $router->get("/refresh-token/{exam_id}", "ExamController@refreshToken");
     $router->post("/exam-category/save", "ExamController@matchCategory");
+});
+
+$router->group(["prefix" => "api/v2","middleware" => "member"], function() use ($router){
+    #exam
+    $router->get("/exam-list", "ExamController@getForTeam");
+    $router->post("/sendToken", "ExamController@sendToken");
+    $router->post("/get-question", "ExamController@getQuestion");
+    $router->post("/get-result", "ExamController@getResult");
+    $router->post("/submit-answer", "ExamController@setAnswer");
 });
 
 
@@ -76,7 +86,10 @@ $router->group(["prefix" => "api/v1","middleware" => "admin"], function() use ($
 $router->group(["prefix" => "api/v1"], function() use ($router){
     $router->post("/admin/auth", "AdminController@authenticate");
     $router->post("/judge/auth", "JudgeController@authenticate");
-    $router->post("/member/auth", "JudgeController@authenticate");
+});
+
+$router->group(["prefix" => "api/v2"], function() use ($router){
+    $router->post("/member/auth", "MemberController@authenticate");
 });
 
 

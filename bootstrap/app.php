@@ -68,6 +68,7 @@ $app->middleware([
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
     'admin' => App\Http\Middleware\AdminMiddleware::class,
+    'member' => App\Http\Middleware\MemberMiddleware::class,
     'cors' => App\Http\Middleware\CorsMiddleware::class
 ]);
 // header('Access-Control-Allow-Origin: *');

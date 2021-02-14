@@ -20,6 +20,12 @@ class CategoryController extends Controller
         }
     }
 
+    public function getActiveCategory()
+    {
+        $categories = Category::with(["questions","questions.files"])->where("status","1");
+        return response($categories->get());
+    }
+
     public $find;
     public function find(Request $request, $limit = null, $offset = null)
     {

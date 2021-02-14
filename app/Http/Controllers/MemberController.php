@@ -15,7 +15,7 @@ class MemberController extends Controller
         $username = $request->username;
         $password = sha1($request->password).md5($request->password);
         
-        $query = Member::where("username", $username);
+        $query = Member::with(["team","team.school"])->where("username", $username);
         if ($query->count() > 0) {
             $member = $query->first();
             $checkPassword = $member->password == $password;
