@@ -9,6 +9,11 @@ class ExamDetail extends Model{
     ];
     public $incrementing = false;
 
+    public function exam()
+    {
+        return $this->belongsTo("App\DoExam","do_exam_id");
+    }
+
     public function do_exam()
     {
         return $this->belongsTo("App\DoExam","do_exam_id");

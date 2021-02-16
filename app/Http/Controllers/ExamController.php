@@ -9,6 +9,7 @@ use App\ExamCategory;
 use App\DoExam;
 use App\ExamDetail;
 use App\Question;
+use DB;
 
 
 class ExamController extends Controller
@@ -26,7 +27,9 @@ class ExamController extends Controller
 
     public function getForTeam()
     {
-        $exam = Exam::select(['exam_id','exam_name','status'])->get();
+        $exam = Exam::select(['exam_id','exam_name','status'])
+        ->with(["exam_details"])
+        ->get();
         return response($exam);
     }
 
@@ -130,7 +133,8 @@ class ExamController extends Controller
                         "do_exam_id" => $do_exam_id,
                         "start_time" => date("Y-m-d H:i:s"),
                         "team_id" => $request->team_id,
-                        "exam_id" => $request->exam_id
+                        "exam_id" => $request->exam_id,
+                        "status" => false
                     ]);
                 }else{
                     $do_exam_id = DoExam::where("team_id", $request->team_id)
@@ -161,7 +165,11 @@ class ExamController extends Controller
     public function getResult(Request $request)
     {
         $data = ExamDetail::where("do_exam_id", $request->do_exam_id)->get();
-        return response($data);
+        $exam = DoExam::where("do_exam_id", $request->do_exam_id)->first();
+        return response([
+            "results" => $data,
+            "exam" => $exam
+        ]);
     }
 
     public function setAnswer(Request $request)
@@ -180,7 +188,41 @@ class ExamController extends Controller
                 "question_id" => $question_id, "category_id" => $category_id,
                 "answer" => $answer, "score" => $score
             ]);
-            return response(["status" => true, "message" => "Your Answer Submited"]);
+            return response(["status" => true,
+            "result" => ($answer == $question->answer_key),
+            "message" => "Your Answer Submited"]);
+        } catch (\Exception $e) {
+            return response(["status" => false, "message" => $e->getMessage()]);
+        }
+    }
+
+    public function finish(Request $request)
+    {
+        try {
+            DoExam::where("do_exam_id", $request->do_exam_id)->update(["status" => 1]);
+            return response(["status" => true, "message" => "Exam Finished"]);
+        } catch (\Exception $e) {
+            return response(["status" => false, "message" => $e->getMessage()]);
+        }
+    }
+
+    public function getScore($exam_id)
+    {
+        $data = Exam::where("exam_id", $exam_id)
+        ->with(["exam_details", "exam_details.team", "exam_details.exam_details" => function($query){
+            $query->select("do_exam_id","category_id",DB::raw("sum(score) as score"))
+            ->groupBy(["category_id","do_exam_id"]);
+        },"exam_details.exam_details.category"])
+        ->get();
+
+        return response($data);
+    }
+
+    public function resetExam(Request $request)
+    {
+        try {
+            DoExam::where("exam_id",$request->exam_id)->where("team_id", $request->team_id)->delete();
+            return response(["status" => true, "message" => "Exam Reseted"]);
         } catch (\Exception $e) {
             return response(["status" => false, "message" => $e->getMessage()]);
         }

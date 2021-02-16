@@ -6,7 +6,7 @@ class DoExam extends Model{
     protected $table = "do_exam";
     protected $primaryKey = "do_exam_id";
     protected $fillable = [
-        "do_exam_id","exam_id","start_time","team_id"
+        "do_exam_id","exam_id","start_time","status","team_id"
     ];
     public $incrementing = false;
 
@@ -22,6 +22,11 @@ class DoExam extends Model{
     public function team()
     {
         return $this->belongsTo("App\Team","team_id");
+    }
+
+    public function exam_category()
+    {
+        return $this->hasMany("App\ExamCategory","exam_id","exam_id");
     }
 }
 ?>

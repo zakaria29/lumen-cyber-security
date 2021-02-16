@@ -18,6 +18,7 @@ class DoExam extends Migration
             $table->string("exam_id", 30)->index();
             $table->string("team_id", 30)->index();
             $table->dateTime("start_time");
+            $table->boolean("status");
             $table->timestamps();
 
             $table->foreign("exam_id")->references("exam_id")->on("exams")

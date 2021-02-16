@@ -70,6 +70,8 @@ $router->group(["prefix" => "api/v1","middleware" => "admin"], function() use ($
     $router->delete("/exam/drop/{exam_id}", "ExamController@drop");
     $router->get("/refresh-token/{exam_id}", "ExamController@refreshToken");
     $router->post("/exam-category/save", "ExamController@matchCategory");
+    $router->get("/get-score/{exam_id}","ExamController@getScore");
+    $router->post("/reset-exam", "ExamController@resetExam");
 });
 
 $router->group(["prefix" => "api/v2","middleware" => "member"], function() use ($router){
@@ -79,6 +81,10 @@ $router->group(["prefix" => "api/v2","middleware" => "member"], function() use (
     $router->post("/get-question", "ExamController@getQuestion");
     $router->post("/get-result", "ExamController@getResult");
     $router->post("/submit-answer", "ExamController@setAnswer");
+    $router->post("/finish-exam", "ExamController@finish");
+    $router->get("/get-score/{exam_id}","ExamController@getScore");    
+    $router->post("/member-save", "MemberController@save");
+    $router->get("/member[/{limit}/{offset}]", "MemberController@get");
 });
 
 
